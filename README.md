@@ -7,7 +7,9 @@
 
 ### Usage
 
-#### Configuration
+
+*Please follow the instructions on https://pinax.network/en to create an account.*
+
 
 In order to interact with Firehose Grpc-Server you can either use the FirehoseClient-Class directly or start multiple streams by using the FirehoseBatchClient.
 
