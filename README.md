@@ -36,51 +36,51 @@ The FirehoseBatchClient allows for a little more felxibility when it comes to pa
 ##### Example FirehoseBatchClient:
 
 ```csharp
-var batchClients = new ConcurrentQueue<FirehoseBatchClient>();
-ulong batchSize = 5000;
-var parallelClientsCount = 5;
-ulong lastRequestedBlockNum = 0;
+	var batchClients = new ConcurrentQueue<FirehoseBatchClient>();
+	ulong batchSize = 5000;
+	var parallelClientsCount = 5;
+	ulong lastRequestedBlockNum = 0;
 
-var clientOptions = new FirehoseClientOptions() { PinaxApiKey = "Your-Pinax-Api-Key-here" };
+	var clientOptions = new FirehoseClientOptions() { PinaxApiKey = "Your-Pinax-Api-Key-here" };
 
-// start parallel Clients
-for (int i = 0; i < parallelClientsCount; i++)
-{
-    var reader = new FirehoseBatchClient(clientOptions);
-    reader.Start((long)(lastRequestedBlockNum + 1), batchSize);
-    lastRequestedBlockNum += batchSize;
-    batchClients.Enqueue(reader);
-}
+	// start parallel Clients
+	for (int i = 0; i < parallelClientsCount; i++)
+	{
+		var reader = new FirehoseBatchClient(clientOptions);
+		reader.Start((long)(lastRequestedBlockNum + 1), batchSize);
+		lastRequestedBlockNum += batchSize;
+		batchClients.Enqueue(reader);
+	}
 
-// set current Client to first Client n Queue (lowest blockNum)
-batchClients.TryDequeue(out var currentClient);
+	// set current Client to first Client n Queue (lowest blockNum)
+	batchClients.TryDequeue(out var currentClient);
 
-while (true)
-{
-    // if current Client has finished and number of active Clients is smaller than
-    // max parallel Clients start new Client
-    if (currentClient.HasFinished)
-    {
-        if (batchClients.Count < parallelClientsCount)
-        {
-            for (int i = 0; i < parallelClientsCount - batchClients.Count; i++)
-            {
-                var newClient = new FirehoseBatchClient(clientOptions);
-                newClient.Start((long)(lastRequestedBlockNum + 1), batchSize);
-                lastRequestedBlockNum += batchSize;
-                batchClients.Enqueue(newClient);
-            }
-        }
+	while (true)
+	{
+		// if current Client has finished and number of active Clients is smaller than
+		// max parallel Clients start new Client
+		if (currentClient.HasFinished)
+		{
+			if (batchClients.Count < parallelClientsCount)
+			{
+				for (int i = 0; i < parallelClientsCount - batchClients.Count; i++)
+				{
+					var newClient = new FirehoseBatchClient(clientOptions);
+					newClient.Start((long)(lastRequestedBlockNum + 1), batchSize);
+					lastRequestedBlockNum += batchSize;
+					batchClients.Enqueue(newClient);
+				}
+			}
 
-        // Try dequeue the next Client
-        var dequeued = batchClients.TryDequeue(out currentClient);
-        while (!dequeued)
-        {
-            dequeued = batchClients.TryDequeue(out currentClient);
-        }
-    }
+			// Try dequeue the next Client
+			var dequeued = batchClients.TryDequeue(out currentClient);
+			while (!dequeued)
+			{
+				dequeued = batchClients.TryDequeue(out currentClient);
+			}
+		}
 
-    // Read deserialized Block
-    var block = await currentClient.ReadAsync(CancellationToken.None);
-}
+		// Read deserialized Block
+		var block = await currentClient.ReadAsync(CancellationToken.None);
+	}
 ```
